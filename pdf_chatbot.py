@@ -6,7 +6,10 @@ import faiss
 import numpy as np
 import openai
 import tempfile
-import os  
+import os
+import docx
+import pandas as pd
+import speech_recognition as sr
 
 # Page config
 st.set_page_config(page_title="PAGE ECHO", layout="centered", page_icon="📄")
@@ -20,7 +23,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Background and title style
+# Background and style
 st.markdown("""
     <style>
     body {
@@ -44,38 +47,72 @@ st.markdown("""
 
 # Title and subtitle
 st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho</h1>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center; color: #333;'>Your Smart PDF Question Answering Assistant</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #333;'>Your Smart File Question Answering Assistant</h4>", unsafe_allow_html=True)
 
 # Load API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Welcome Message
-if "pdf_uploaded" not in st.session_state:
-    st.session_state["pdf_uploaded"] = False
+# Welcome
+if "file_uploaded" not in st.session_state:
+    st.session_state["file_uploaded"] = False
 
-if not st.session_state["pdf_uploaded"]:
-    st.info("👋 Welcome! Upload a PDF file to get started.")
+if not st.session_state["file_uploaded"]:
+    st.info("👋 Welcome! Upload a file (PDF, TXT, DOCX, XLSX, CSV, WAV) to get started.")
 
-# PDF Upload
-st.title("📄 Chat with your PDF")
-pdf_file = st.file_uploader("Upload a PDF", type=["pdf"])
+# Upload file
+st.title("📄 Chat with your File")
+uploaded_file = st.file_uploader("Upload a file", type=["pdf", "txt", "docx", "xlsx", "csv", "wav"])
 
 texts, index, embed_model = [], None, None
 
-if pdf_file and openai.api_key:
-    st.session_state["pdf_uploaded"] = True
+if uploaded_file and openai.api_key:
+    st.session_state["file_uploaded"] = True
 
-    with st.spinner("🔄 Processing your PDF, please wait..."):
+    with st.spinner("🔄 Processing your file, please wait..."):
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-            tmp_file.write(pdf_file.read())
+            tmp_file.write(uploaded_file.read())
             tmp_path = tmp_file.name
 
-        reader = PdfReader(tmp_path)
         raw_text = ""
-        for page in reader.pages:
-            content = page.extract_text()
-            if content:
-                raw_text += content + "\n"
+        ext = uploaded_file.name.split('.')[-1].lower()
+
+        try:
+            if ext == "pdf":
+                reader = PdfReader(tmp_path)
+                for page in reader.pages:
+                    content = page.extract_text()
+                    if content:
+                        raw_text += content + "\n"
+
+            elif ext == "txt":
+                with open(tmp_path, "r", encoding="utf-8") as f:
+                    raw_text = f.read()
+
+            elif ext == "docx":
+                doc = docx.Document(tmp_path)
+                for para in doc.paragraphs:
+                    raw_text += para.text + "\n"
+
+            elif ext in ["xlsx", "csv"]:
+                if ext == "xlsx":
+                    df = pd.read_excel(tmp_path)
+                else:
+                    df = pd.read_csv(tmp_path)
+                raw_text = df.to_string(index=False)
+
+            elif ext == "wav":
+                recognizer = sr.Recognizer()
+                with sr.AudioFile(tmp_path) as source:
+                    audio = recognizer.record(source)
+                    raw_text = recognizer.recognize_google(audio)
+
+            else:
+                st.error("❌ Unsupported file format.")
+                st.stop()
+
+        except Exception as e:
+            st.error(f"Error reading file: {e}")
+            st.stop()
 
         splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         texts = splitter.split_text(raw_text)
@@ -87,16 +124,16 @@ if pdf_file and openai.api_key:
         index = faiss.IndexFlatL2(dimension)
         index.add(np.array(embeddings))
 
-    st.success("✅ PDF processed. Ask a question below!")
+    st.success("✅ File processed. Ask a question below!")
 
-# Question Input with Purple Button
+# Input + Button
 col1, col2 = st.columns([4, 1])
 with col1:
-    query = st.text_input("Ask a question about the PDF", placeholder="e.g., What is the summary?", key="query_input")
+    query = st.text_input("Ask a question about the file", placeholder="e.g., What is the summary?")
 with col2:
     submit = st.button("Search")
 
-# Query Processing
+# Answer
 if submit and query and texts and index is not None:
     with st.spinner("💬 Generating answer..."):
         query_embedding = embed_model.encode([query])
@@ -121,5 +158,6 @@ Answer:
             st.markdown(f"**Answer:** {answer}")
         except Exception as e:
             st.error(f"❌ OpenAI API error: {e}")
-elif pdf_file and not openai.api_key:
+
+elif uploaded_file and not openai.api_key:
     st.warning("⚠️ No OpenAI API key found. Please add it in Streamlit secrets.")
