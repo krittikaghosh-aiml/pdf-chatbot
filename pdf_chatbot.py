@@ -22,28 +22,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Background and style
-st.markdown("""
-    <style>
-    body {
-        background-color: #e6ccff;
-        color: #2c3e50;
-    }
-    div.stButton > button {
-        background-color: #6a0dad;
-        color: white;
-        border: none;
-        padding: 8px 20px;
-        border-radius: 6px;
-        font-size: 16px;
-        margin-top: 32px;
-    }
-    div.stButton > button:hover {
-        background-color: #5c0099;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
+# Button styles
 st.markdown("""
     <style>
     div.stButton > button {
@@ -56,7 +35,7 @@ st.markdown("""
         font-weight: bold;
         transition: all 0.3s ease-in-out;
         animation: pulse 2s infinite;
-        white-space: nowrap;  /* Prevents wrapping */
+        white-space: nowrap;
     }
 
     div.stButton > button:hover {
@@ -72,11 +51,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
-
-# Title and subtitle
+# Title and tagline
 st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho ✨</h1>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center; color: #333;'> Where Knowledge Echoes from Every Page🪄</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #333;'>Where Knowledge Echoes from Every Page 🪄</h4>", unsafe_allow_html=True)
 
 # Load API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -88,12 +65,50 @@ if "file_uploaded" not in st.session_state:
 if not st.session_state["file_uploaded"]:
     st.info("👋 Welcome! Upload a file (PDF, TXT, DOCX, XLSX, CSV) to get started.")
 
-# Upload file
+# Upload section
 st.markdown("<h3 style='text-align: center; color: #6a0dad;'>🌀 PageEcho Portal: Talk to Your File</h3>", unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Upload a file", type=["pdf", "txt", "docx", "xlsx", "csv"])
 
 texts, index, embed_model = [], None, None
 
+# Sample question list
+sample_questions = [
+    "What is the summary?",
+    "List key points discussed.",
+    "What is the conclusion?",
+    "What are the main findings?",
+    "What is the purpose of the document?",
+    "Can you explain the methodology?",
+    "What are the recommendations?",
+    "Summarize the introduction section.",
+    "Highlight important dates or events.",
+    "What are the challenges mentioned?"
+]
+
+# Inputs: dropdown and custom
+col1, col2 = st.columns([1, 1])
+with col1:
+    selected_question = st.selectbox("Pick a sample question:", [""] + sample_questions)
+with col2:
+    custom_question = st.text_input("Or type your question here")
+
+query = custom_question if custom_question else selected_question
+
+# Centered search button
+button_cols = st.columns([3, 1, 3])
+with button_cols[1]:
+    submit = st.button("🔍 Search", use_container_width=True)
+
+# Validation: must upload + provide question
+if submit:
+    if not uploaded_file:
+        st.error("📂 Please upload a file before asking a question.")
+    elif not query.strip():
+        st.error("⚠️ No question given. Please type or select a question.")
+    else:
+        st.info(f"🔍 Searching answer for: **{query}**")
+
+# Process file
 if uploaded_file and openai.api_key:
     st.session_state["file_uploaded"] = True
 
@@ -112,79 +127,35 @@ if uploaded_file and openai.api_key:
                     content = page.extract_text()
                     if content:
                         raw_text += content + "\n"
-
             elif ext == "txt":
                 with open(tmp_path, "r", encoding="utf-8") as f:
                     raw_text = f.read()
-
             elif ext == "docx":
                 doc = docx.Document(tmp_path)
                 for para in doc.paragraphs:
                     raw_text += para.text + "\n"
-
             elif ext in ["xlsx", "csv"]:
                 df = pd.read_excel(tmp_path) if ext == "xlsx" else pd.read_csv(tmp_path)
                 raw_text = df.to_string(index=False)
-
             else:
                 st.error("❌ Unsupported file format.")
                 st.stop()
-
         except Exception as e:
             st.error(f"Error reading file: {e}")
             st.stop()
 
-        # Process text
         splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         texts = splitter.split_text(raw_text)
 
         embed_model = SentenceTransformer('all-MiniLM-L6-v2')
         embeddings = embed_model.encode(texts)
-
         dimension = embeddings.shape[1]
         index = faiss.IndexFlatL2(dimension)
         index.add(np.array(embeddings))
 
     st.success("✅ File processed. Ask a question below!")
 
-# Sample questions
-sample_questions = [
-    "What is the summary?",
-    "List key points discussed.",
-    "What is the conclusion?",
-    "What are the main findings?",
-    "What is the purpose of the document?",
-    "Can you explain the methodology?",
-    "What are the recommendations?",
-    "Summarize the introduction section.",
-    "Highlight important dates or events.",
-    "What are the challenges mentioned?"
-]
-
-# Question input row
-col1, col2 = st.columns([1, 1])
-with col1:
-    selected_question = st.selectbox("Pick a sample question:", [""] + sample_questions)
-with col2:
-    custom_question = st.text_input("Or type your question here")
-
-# Combine both into one final query
-query = custom_question if custom_question else selected_question
-
-# Search button row (centered)
-button_cols = st.columns([3, 1, 3])
-with button_cols[1]:
-    submit = st.button("🔍 Search", use_container_width=True)
-
-# Handle empty question
-if submit:
-    if not query.strip():
-        st.error("⚠️ No question given. Please type or select a question.")
-    else:
-        st.info(f"🔍 Searching answer for: **{query}**")
-        # Put your answer generation code here
-
-# Answer
+# Generate answer
 if submit and query and texts and index is not None:
     with st.spinner("💬 Generating answer..."):
         query_embedding = embed_model.encode([query])
