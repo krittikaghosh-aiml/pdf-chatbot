@@ -8,8 +8,12 @@ import openai
 import tempfile
 import os  
 from PIL import Image
-logo = Image.open("logo.png")
-st.image(logo, width=150) 
+
+col1, col2, col3 = st.columns([1, 3, 1])
+with col2:
+    logo = Image.open("logo.png")
+    st.image(logo, width=120, use_column_width=False, output_format="PNG", caption="PDF Chatbot")
+    
 st.set_page_config(page_title="PDF CHATBOT",layout="centered",page_icon="📄")
 
 # Hide Streamlit style elements
@@ -18,6 +22,7 @@ hide_streamlit_style = """
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    button[title="View fullscreen"] {visibility: hidden;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
