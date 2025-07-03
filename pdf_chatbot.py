@@ -153,7 +153,7 @@ if uploaded_file and openai.api_key:
         index = faiss.IndexFlatL2(dimension)
         index.add(np.array(embeddings))
 
-    st.success("✅ File processed. Ask a question below!")
+    st.success("✅ File processed. You can ask a question!")
 
 # Generate answer
 if submit and query and texts and index is not None:
