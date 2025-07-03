@@ -19,14 +19,25 @@ st.markdown("""
     header {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
-st.markdown("---")  # or
-st.markdown("📄 **Your Questions Below**")
+
 # Background and title style
 st.markdown("""
     <style>
     body {
         background-color: #e6ccff;  /* Soft lilac */
         color: #2c3e50;
+    }
+    div.stButton > button {
+        background-color: #6a0dad;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-size: 16px;
+        margin-top: 32px;
+    }
+    div.stButton > button:hover {
+        background-color: #5c0099;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -78,10 +89,15 @@ if pdf_file and openai.api_key:
 
     st.success("✅ PDF processed. Ask a question below!")
 
-# Question Input
-query = st.text_input("Ask a question about the PDF", placeholder="e.g., What is the summary?")
+# Question Input with Purple Button
+col1, col2 = st.columns([4, 1])
+with col1:
+    query = st.text_input("Ask a question about the PDF", placeholder="e.g., What is the summary?", key="query_input")
+with col2:
+    submit = st.button("Search")
 
-if query and texts and index is not None:
+# Query Processing
+if submit and query and texts and index is not None:
     with st.spinner("💬 Generating answer..."):
         query_embedding = embed_model.encode([query])
         distances, indices = index.search(query_embedding, k=3)
@@ -107,4 +123,3 @@ Answer:
             st.error(f"❌ OpenAI API error: {e}")
 elif pdf_file and not openai.api_key:
     st.warning("⚠️ No OpenAI API key found. Please add it in Streamlit secrets.")
-
