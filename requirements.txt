@@ -4,3 +4,7 @@ faiss-cpu
 PyPDF2
 sentence-transformers
 langchain
+numpy
+python-docx
+pandas
+SpeechRecognition
