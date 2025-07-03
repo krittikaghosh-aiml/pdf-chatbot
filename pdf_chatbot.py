@@ -221,7 +221,7 @@ st.markdown("""
         bottom: 0;
         left: 0;
         padding: 16px 32px;
-        font-size: 20px;
+        font-size: 16px;
         font-weight: bold;
         color: white;
         background-color: #6a0dad;
