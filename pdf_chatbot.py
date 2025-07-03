@@ -7,6 +7,9 @@ import numpy as np
 import openai
 import tempfile
 import os  
+from PIL import Image
+logo = Image.open("logo.png")
+st.image(logo, width=150) 
 st.set_page_config(page_title="PDF CHATBOT",layout="centered",page_icon="📄")
 
 # Hide Streamlit style elements
