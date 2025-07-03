@@ -202,10 +202,21 @@ Answer:
 # API key not set
 elif uploaded_file and not openai.api_key:
     st.warning("⚠️ No OpenAI API key found. Please add it in Streamlit secrets.")
-# Footer
 st.markdown("""
-    <hr style="margin-top: 50px; border: none; border-top: 1px solid #bbb;" />
-    <div style='text-align: center; padding: 10px; font-size: 14px; color: #888;'>
-        🔧 Created by <b>Krittika Ghosh</b> • Powered with ❤️ by OpenAI & Streamlit
+    <style>
+    .footer-left {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        padding: 10px 20px;
+        font-size: 13px;
+        color: #555;
+        background-color: #f1e6ff;
+        border-top-right-radius: 8px;
+        z-index: 9999;
+    }
+    </style>
+    <div class="footer-left">
+        🔧 Created by <b>Sonali Ghosh</b>
     </div>
 """, unsafe_allow_html=True)
