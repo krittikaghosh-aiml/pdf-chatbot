@@ -18,7 +18,21 @@ hide_streamlit_style = """
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #e6ccff; /* soft lilac */
+        color: #2c3e50;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<h1 style='text-align: center; color: #4b0082;'>📄 PDF Chatbot</h1>",
+    unsafe_allow_html=True
+)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 st.title("📄 Chat with your PDF")
