@@ -9,6 +9,16 @@ import tempfile
 import os  
 st.set_page_config(page_title="PDF CHATBOT",layout="centered",page_icon="📄")
 
+# Hide Streamlit style elements
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 st.title("📄 Chat with your PDF")
