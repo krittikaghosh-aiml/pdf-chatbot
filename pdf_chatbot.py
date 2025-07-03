@@ -10,6 +10,7 @@ import os
 import docx
 import pandas as pd
 import speech_recognition as sr
+from pydub import AudioSegment
 
 # Page config
 st.set_page_config(page_title="PAGE ECHO", layout="centered", page_icon="📄")
@@ -52,16 +53,16 @@ st.markdown("<h4 style='text-align: center; color: #333;'>Your Smart File Questi
 # Load API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Welcome
+# Welcome message
 if "file_uploaded" not in st.session_state:
     st.session_state["file_uploaded"] = False
 
 if not st.session_state["file_uploaded"]:
-    st.info("👋 Welcome! Upload a file (PDF, TXT, DOCX, XLSX, CSV, WAV) to get started.")
+    st.info("👋 Welcome! Upload a file (PDF, TXT, DOCX, XLSX, CSV, MP3, MP4, WAV) to get started.")
 
 # Upload file
 st.title("📄 Chat with your File")
-uploaded_file = st.file_uploader("Upload a file", type=["pdf", "txt", "docx", "xlsx", "csv", "wav"])
+uploaded_file = st.file_uploader("Upload a file", type=["pdf", "txt", "docx", "xlsx", "csv", "wav", "mp3", "mp4"])
 
 texts, index, embed_model = [], None, None
 
@@ -100,12 +101,19 @@ if uploaded_file and openai.api_key:
                     df = pd.read_csv(tmp_path)
                 raw_text = df.to_string(index=False)
 
-            elif ext == "wav":
+            elif ext in ["mp3", "mp4"]:
+                audio = AudioSegment.from_file(tmp_path)
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as wav_file:
+                    audio.export(wav_file.name, format="wav")
+                    tmp_path = wav_file.name
+                    ext = "wav"  # continue as wav
+
+            if ext == "wav":
                 recognizer = sr.Recognizer()
                 with sr.AudioFile(tmp_path) as source:
-                    audio = recognizer.record(source)
+                    audio_data = recognizer.record(source)
                     try:
-                        raw_text = recognizer.recognize_google(audio)
+                        raw_text = recognizer.recognize_google(audio_data)
                     except sr.UnknownValueError:
                         st.error("❌ Could not understand the audio.")
                         st.stop()
@@ -113,12 +121,12 @@ if uploaded_file and openai.api_key:
                         st.error(f"❌ Speech Recognition API error: {e}")
                         st.stop()
 
-            else:
-                st.error("❌ Unsupported file format.")
+            if not raw_text.strip():
+                st.error("❌ No readable text found in the file.")
                 st.stop()
 
         except Exception as e:
-            st.error(f"Error reading file: {e}")
+            st.error(f"❌ Error reading file: {e}")
             st.stop()
 
         # Process text
