@@ -202,6 +202,7 @@ Answer:
 # API key not set
 elif uploaded_file and not openai.api_key:
     st.warning("⚠️ No OpenAI API key found. Please add it in Streamlit secrets.")
+#Footer
 st.markdown("""
     <style>
     @keyframes glow {
@@ -216,11 +217,20 @@ st.markdown("""
         }
     }
 
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-6px);
+        }
+    }
+
     .footer-left-animated {
         position: fixed;
         bottom: 0;
         left: 0;
-        padding: 16px 32px;
+        padding: 10px 20px;
         font-size: 16px;
         font-weight: bold;
         color: white;
@@ -228,9 +238,30 @@ st.markdown("""
         border-top-right-radius: 12px;
         animation: glow 3s ease-in-out infinite;
         z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .emoji {
+        animation: bounce 1.5s infinite;
+        font-size: 18px;
+    }
+
+    @media screen and (max-width: 600px) {
+        .footer-left-animated {
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+        .emoji {
+            font-size: 16px;
+        }
     }
     </style>
+
     <div class="footer-left-animated">
-        🔧 Created by <b>KRITTIKA GHOSH</b>
+        <span class="emoji">🚀</span>
+        Created by <a href="https://github.com/Sonali-Ghosh" style="color: white; text-decoration: underline;" target="_blank">Sonali Ghosh</a>
     </div>
 """, unsafe_allow_html=True)
+
