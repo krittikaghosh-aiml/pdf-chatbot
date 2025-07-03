@@ -204,19 +204,33 @@ elif uploaded_file and not openai.api_key:
     st.warning("⚠️ No OpenAI API key found. Please add it in Streamlit secrets.")
 st.markdown("""
     <style>
-    .footer-left {
+    @keyframes glow {
+        0% {
+            box-shadow: 0 0 5px #b266ff, 0 0 10px #b266ff, 0 0 15px #b266ff;
+        }
+        50% {
+            box-shadow: 0 0 10px #8a2be2, 0 0 20px #8a2be2, 0 0 30px #8a2be2;
+        }
+        100% {
+            box-shadow: 0 0 5px #b266ff, 0 0 10px #b266ff, 0 0 15px #b266ff;
+        }
+    }
+
+    .footer-left-animated {
         position: fixed;
         bottom: 0;
         left: 0;
-        padding: 10px 20px;
-        font-size: 13px;
-        color: #555;
-        background-color: #f1e6ff;
-        border-top-right-radius: 8px;
+        padding: 16px 32px;
+        font-size: 20px;
+        font-weight: bold;
+        color: white;
+        background-color: #6a0dad;
+        border-top-right-radius: 12px;
+        animation: glow 3s ease-in-out infinite;
         z-index: 9999;
     }
     </style>
-    <div class="footer-left">
-        🔧 Created by <b>Sonali Ghosh</b>
+    <div class="footer-left-animated">
+        🔧 Created by <b>KRITTIKA GHOSH</b>
     </div>
 """, unsafe_allow_html=True)
