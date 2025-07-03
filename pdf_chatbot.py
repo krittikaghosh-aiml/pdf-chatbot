@@ -45,8 +45,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Title and subtitle
-st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho–Where Files Speak!🪄</h1>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center; color: #333;'>Your Smart File Question Answering Assistant</h4>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho ✨</h1>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #333;'>Knowledge Echoes from Every Page🪄</h4>", unsafe_allow_html=True)
 
 # Load API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -152,4 +152,3 @@ Answer:
 
 elif uploaded_file and not openai.api_key:
     st.warning("⚠️ No OpenAI API key found. Please add it in Streamlit secrets.")
-
