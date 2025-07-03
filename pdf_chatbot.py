@@ -260,8 +260,7 @@ st.markdown("""
     </style>
 
     <div class="footer-left-animated">
-        <span class="emoji">🚀</span>
-        Created by <a href="https://github.com/Sonali-Ghosh" style="color: white; text-decoration: underline;" target="_blank">Sonali Ghosh</a>
+        <span class="emoji">👩‍💻</span>
+        Created by <b> Krittika Ghosh</b>
     </div>
 """, unsafe_allow_html=True)
-
