@@ -11,7 +11,7 @@ import docx
 import pandas as pd
 
 # Page config
-st.set_page_config(page_title="PAGE ECHO", layout="centered", page_icon="📄")
+st.set_page_config(page_title="PAGEECHO", layout="centered", page_icon="📄")
 
 # Hide Streamlit UI elements
 st.markdown("""
@@ -117,12 +117,34 @@ if uploaded_file and openai.api_key:
 
     st.success("✅ File processed. Ask a question below!")
 
-# Input + Button
-col1, col2 = st.columns([3, 1])
+# Sample questions
+sample_questions = [
+    "What is the summary?",
+    "List key points discussed.",
+    "What is the conclusion?",
+    "What are the main findings?",
+    "What is the purpose of the document?",
+    "Can you explain the methodology?",
+    "What are the recommendations?",
+    "Summarize the introduction section.",
+    "Highlight important dates or events.",
+    "What are the challenges mentioned?"
+]
+
+# Layout: Dropdown + Text Input + Search Button
+col1, col2, col3 = st.columns([3, 3, 1])
+
 with col1:
-    query = st.text_input("Ask a question about the file", placeholder="e.g., What is the summary?")
+    selected_question = st.selectbox("Pick a Sample Question:", [""] + sample_questions)
+
 with col2:
-    submit = st.button("Search")
+    custom_question = st.text_input("Or Type your question here")
+
+with col3:
+    submit = st.button("🔍 Search", use_container_width=True)
+
+# Use custom input if available, else fallback to dropdown
+query = custom_question if custom_question else selected_question
 
 # Answer
 if submit and query and texts and index is not None:
