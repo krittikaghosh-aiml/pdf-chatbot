@@ -27,7 +27,7 @@ st.markdown("""
 st.markdown("""
     <style>
     body {
-        background-color: #e6ccff;  /* Soft lilac */
+        background-color: #e6ccff;
         color: #2c3e50;
     }
     div.stButton > button {
@@ -69,7 +69,7 @@ if uploaded_file and openai.api_key:
     st.session_state["file_uploaded"] = True
 
     with st.spinner("🔄 Processing your file, please wait..."):
-        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix="." + uploaded_file.name.split('.')[-1]) as tmp_file:
             tmp_file.write(uploaded_file.read())
             tmp_path = tmp_file.name
 
@@ -104,7 +104,14 @@ if uploaded_file and openai.api_key:
                 recognizer = sr.Recognizer()
                 with sr.AudioFile(tmp_path) as source:
                     audio = recognizer.record(source)
-                    raw_text = recognizer.recognize_google(audio)
+                    try:
+                        raw_text = recognizer.recognize_google(audio)
+                    except sr.UnknownValueError:
+                        st.error("❌ Could not understand the audio.")
+                        st.stop()
+                    except sr.RequestError as e:
+                        st.error(f"❌ Speech Recognition API error: {e}")
+                        st.stop()
 
             else:
                 st.error("❌ Unsupported file format.")
@@ -114,6 +121,7 @@ if uploaded_file and openai.api_key:
             st.error(f"Error reading file: {e}")
             st.stop()
 
+        # Process text
         splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         texts = splitter.split_text(raw_text)
 
