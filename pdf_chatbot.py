@@ -59,7 +59,7 @@ if not st.session_state["file_uploaded"]:
     st.info("👋 Welcome! Upload a file (PDF, TXT, DOCX, XLSX, CSV) to get started.")
 
 # Upload file
-st.title("📄 Chat with your File")
+st.markdown("<h3 style='text-align: center; color: #6a0dad;'>🌀 PageEcho Portal: Talk to Your File</h3>", unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Upload a file", type=["pdf", "txt", "docx", "xlsx", "csv"])
 
 texts, index, embed_model = [], None, None
