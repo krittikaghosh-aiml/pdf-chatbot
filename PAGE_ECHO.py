@@ -7,14 +7,7 @@ import numpy as np
 import openai
 import tempfile
 import os  
-from PIL import Image
-
-col1, col2, col3 = st.columns([1, 3, 1])
-with col2:
-    logo = Image.open("logo.png")
-    st.image(logo, width=120, use_column_width=False, output_format="PNG", caption="PDF Chatbot")
-    
-st.set_page_config(page_title="PDF CHATBOT",layout="centered",page_icon="📄")
+st.set_page_config(page_title="PAGE ECHO",layout="centered",page_icon="📄")
 
 # Hide Streamlit style elements
 hide_streamlit_style = """
@@ -22,7 +15,6 @@ hide_streamlit_style = """
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    button[title="View fullscreen"] {visibility: hidden;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -38,7 +30,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 st.markdown(
-    "<h1 style='text-align: center; color: #4b0082;'>📄 PDF Chatbot</h1>",
+    "<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho</h1>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<h4 style='text-align: center; color: #333;'>Your Smart PDF Question Answering Assistant</h4>",
     unsafe_allow_html=True
 )
 openai.api_key = os.getenv("OPENAI_API_KEY")
