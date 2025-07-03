@@ -159,30 +159,28 @@ sample_questions = [
     "What are the challenges mentioned?"
 ]
 
-# Layout: Dropdown + Text Input + Search Button
-col1, col2, col3 = st.columns([3, 3, 1])
-
+# Question input row
+col1, col2 = st.columns([1, 1])
 with col1:
     selected_question = st.selectbox("Pick a sample question:", [""] + sample_questions)
-
 with col2:
     custom_question = st.text_input("Or type your question here")
 
-with col3:
-    submit = st.button("🔍 Search", use_container_width=True)
-
-# Use custom input if available, else fallback to dropdown
+# Combine both into one final query
 query = custom_question if custom_question else selected_question
 
-# Check if user clicked Search without giving any question
+# Search button row (centered)
+button_cols = st.columns([3, 1, 3])
+with button_cols[1]:
+    submit = st.button("🔍 Search", use_container_width=True)
+
+# Handle empty question
 if submit:
     if not query.strip():
         st.error("⚠️ No question given. Please type or select a question.")
     else:
-        # Proceed with question processing
-        # (Put your vector search and OpenAI API call here)
         st.info(f"🔍 Searching answer for: **{query}**")
-
+        # Put your answer generation code here
 
 # Answer
 if submit and query and texts and index is not None:
