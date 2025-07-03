@@ -118,7 +118,7 @@ if uploaded_file and openai.api_key:
     st.success("✅ File processed. Ask a question below!")
 
 # Input + Button
-col1, col2 = st.columns([4, 1])
+col1, col2 = st.columns([3, 1])
 with col1:
     query = st.text_input("Ask a question about the file", placeholder="e.g., What is the summary?")
 with col2:
