@@ -56,6 +56,7 @@ st.markdown("""
         font-weight: bold;
         transition: all 0.3s ease-in-out;
         animation: pulse 2s infinite;
+        white-space: nowrap;  /* Prevents wrapping */
     }
 
     div.stButton > button:hover {
@@ -70,6 +71,7 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 
 # Title and subtitle
