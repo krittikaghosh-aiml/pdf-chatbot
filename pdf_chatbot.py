@@ -11,7 +11,7 @@ import docx
 import pandas as pd
 
 # Page config
-st.set_page_config(page_title="PAGEECHO", layout="centered", page_icon="📄")
+st.set_page_config(page_title="PageEcho", layout="centered", page_icon="📄")
 
 # Hide Streamlit UI elements
 st.markdown("""
@@ -43,6 +43,34 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
+st.markdown("""
+    <style>
+    div.stButton > button {
+        background-color: #6a0dad;
+        color: white;
+        border: none;
+        padding: 10px 30px;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        transition: all 0.3s ease-in-out;
+        animation: pulse 2s infinite;
+    }
+
+    div.stButton > button:hover {
+        background-color: #5c0099;
+        transform: scale(1.05);
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(106, 13, 173, 0.5); }
+        70% { box-shadow: 0 0 0 10px rgba(106, 13, 173, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(106, 13, 173, 0); }
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 
 # Title and subtitle
 st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho ✨</h1>", unsafe_allow_html=True)
