@@ -22,9 +22,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Custom button styling
+# Background and style
 st.markdown("""
     <style>
+    body {
+        background-color: #e6ccff;
+        color: #2c3e50;
+    }
     div.stButton > button {
         background-color: #6a0dad;
         color: white;
@@ -37,10 +41,12 @@ st.markdown("""
         animation: pulse 2s infinite;
         white-space: nowrap;
     }
+
     div.stButton > button:hover {
         background-color: #5c0099;
         transform: scale(1.05);
     }
+
     @keyframes pulse {
         0% { box-shadow: 0 0 0 0 rgba(106, 13, 173, 0.5); }
         70% { box-shadow: 0 0 0 10px rgba(106, 13, 173, 0); }
@@ -49,19 +55,26 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Title
+# Title and subtitle
 st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho ✨</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center; color: #333;'>Where Knowledge Echoes from Every Page 🪄</h4>", unsafe_allow_html=True)
 
-# API Key
+# Load API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Upload file
+# Session states
+if "file_uploaded" not in st.session_state:
+    st.session_state["file_uploaded"] = False
+if "index" not in st.session_state:
+    st.session_state["index"] = None
+if "texts" not in st.session_state:
+    st.session_state["texts"] = []
+
+# Upload Section
 st.markdown("<h3 style='text-align: center; color: #6a0dad;'>🌀 PageEcho Portal: Talk to Your File</h3>", unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Upload a file", type=["pdf", "txt", "docx", "xlsx", "csv"])
 
-# If file is uploaded and not yet processed
-if uploaded_file and "index" not in st.session_state:
+if uploaded_file and openai.api_key:
     with st.spinner("🔄 Processing your file, please wait..."):
         with tempfile.NamedTemporaryFile(delete=False, suffix="." + uploaded_file.name.split('.')[-1]) as tmp_file:
             tmp_file.write(uploaded_file.read())
@@ -77,39 +90,47 @@ if uploaded_file and "index" not in st.session_state:
                     content = page.extract_text()
                     if content:
                         raw_text += content + "\n"
+
             elif ext == "txt":
                 with open(tmp_path, "r", encoding="utf-8") as f:
                     raw_text = f.read()
+
             elif ext == "docx":
                 doc = docx.Document(tmp_path)
                 for para in doc.paragraphs:
                     raw_text += para.text + "\n"
+
             elif ext in ["xlsx", "csv"]:
                 df = pd.read_excel(tmp_path) if ext == "xlsx" else pd.read_csv(tmp_path)
                 raw_text = df.to_string(index=False)
+
             else:
                 st.error("❌ Unsupported file format.")
                 st.stop()
+
         except Exception as e:
             st.error(f"Error reading file: {e}")
             st.stop()
 
-        # Text splitting and embedding
         splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         texts = splitter.split_text(raw_text)
+
         embed_model = SentenceTransformer('all-MiniLM-L6-v2')
         embeddings = embed_model.encode(texts)
+
         dimension = embeddings.shape[1]
         index = faiss.IndexFlatL2(dimension)
         index.add(np.array(embeddings))
 
-        # Store in session
+        st.session_state["file_uploaded"] = True
         st.session_state["texts"] = texts
         st.session_state["index"] = index
         st.session_state["embed_model"] = embed_model
-        st.success("✅ File processed. Ask a question below!")
 
-# Sample questions
+if st.session_state["file_uploaded"] and st.session_state["index"]:
+    st.success("✅ File processed. Ask a question below!")
+
+# Sample Questions
 sample_questions = [
     "What is the summary?",
     "List key points discussed.",
@@ -123,7 +144,6 @@ sample_questions = [
     "What are the challenges mentioned?"
 ]
 
-# Question UI
 col1, col2 = st.columns([1, 1])
 with col1:
     selected_question = st.selectbox("Pick a sample question:", [""] + sample_questions)
@@ -132,25 +152,23 @@ with col2:
 
 query = custom_question if custom_question else selected_question
 
-# Search button
 button_cols = st.columns([3, 1, 3])
 with button_cols[1]:
     submit = st.button("🔍 Search", use_container_width=True)
 
-# Logic after Search
+# Handle cases
 if submit:
     if not uploaded_file:
-        st.error("📂 Please upload a file first.")
+        st.error("⚠️ Please upload a file before asking a question.")
     elif not query.strip():
         st.error("⚠️ No question given. Please type or select a question.")
     else:
-        # Extract from session
-        texts = st.session_state["texts"]
-        index = st.session_state["index"]
-        embed_model = st.session_state["embed_model"]
-
         st.info(f"🔍 Searching answer for: **{query}**")
         with st.spinner("💬 Generating answer..."):
+            embed_model = st.session_state["embed_model"]
+            texts = st.session_state["texts"]
+            index = st.session_state["index"]
+
             query_embedding = embed_model.encode([query])
             distances, indices = index.search(query_embedding, k=3)
             context = "\n\n".join([texts[i] for i in indices[0]])
