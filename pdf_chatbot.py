@@ -21,7 +21,7 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state["authenticated"]:
     st.set_page_config(page_title="PageEcho", layout="centered", page_icon="📄")
-    st.title("🔐 Login to PageEcho")
+    st.title("🔐 Login to 🤖 PageEcho ✨")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
