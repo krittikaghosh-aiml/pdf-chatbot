@@ -18,14 +18,9 @@ users = {
 
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
-# ========== LOGOUT ==========
-with st.sidebar:
-    st.markdown("### 🔒 Session")
-    if st.button("🚪 Logout"):
-        st.session_state["authenticated"] = False
-        st.session_state["file_uploaded"] = False
-        st.rerun()
+
 if not st.session_state["authenticated"]:
+    st.set_page_config(page_title="PageEcho", layout="centered", page_icon="📄")
     st.title("🔐 Login to PageEcho")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
@@ -41,22 +36,26 @@ if not st.session_state["authenticated"]:
 # ========== PAGE CONFIG ==========
 st.set_page_config(page_title="PageEcho", layout="centered", page_icon="📄")
 
-# Hide Streamlit UI
+# Top-Center Logout Button
+logout_center = st.columns([4, 1, 4])
+with logout_center[1]:
+    if st.button("🚪 Logout"):
+        for key in st.session_state.keys():
+            st.session_state[key] = False
+        st.rerun()
+
+# ========== UI STYLING ==========
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    </style>
-""", unsafe_allow_html=True)
 
-# Custom style
-st.markdown("""
-    <style>
     body {
         background-color: #e6ccff;
         color: #2c3e50;
     }
+
     div.stButton > button {
         background-color: #6a0dad;
         color: white;
@@ -68,10 +67,12 @@ st.markdown("""
         animation: pulse 2s infinite;
         white-space: nowrap;
     }
+
     div.stButton > button:hover {
         background-color: #5c0099;
         transform: scale(1.05);
     }
+
     @keyframes pulse {
         0% { box-shadow: 0 0 0 0 rgba(106, 13, 173, 0.5); }
         70% { box-shadow: 0 0 0 10px rgba(106, 13, 173, 0); }
@@ -80,27 +81,32 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Title
+# ========== APP HEADER ==========
 st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho ✨</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center; color: #333;'>Where Knowledge Echoes from Every Page 🪄</h4>", unsafe_allow_html=True)
 
-# OpenAI Key
+# ========== API KEY ==========
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Session variables
+# ========== SESSION VARS ==========
 for key in ["file_uploaded", "texts", "index", "embed_model", "filename", "show_processed_msg"]:
     if key not in st.session_state:
         st.session_state[key] = False if key == "file_uploaded" else None
 
-# Upload section
+# ========== FILE UPLOAD ==========
 st.markdown("<h3 style='text-align: center; color: #6a0dad;'>🌀 PageEcho Portal: Talk to Your File</h3>", unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Upload a file", type=["pdf", "txt", "docx", "xlsx", "csv"])
 
-# Reset on file removal
 if uploaded_file is None:
-    st.session_state.update({"file_uploaded": False, "texts": [], "index": None, "embed_model": None, "filename": None, "show_processed_msg": False})
+    st.session_state.update({
+        "file_uploaded": False,
+        "texts": [],
+        "index": None,
+        "embed_model": None,
+        "filename": None,
+        "show_processed_msg": False
+    })
 
-# File processing
 if uploaded_file and openai.api_key:
     if uploaded_file.name != st.session_state["filename"]:
         st.session_state["file_uploaded"] = True
@@ -134,7 +140,6 @@ if uploaded_file and openai.api_key:
                 st.error(f"Error reading file: {e}")
                 st.stop()
 
-            # Embedding
             splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
             texts = splitter.split_text(raw_text)
 
@@ -154,7 +159,7 @@ if uploaded_file and openai.api_key:
 if st.session_state["show_processed_msg"]:
     st.success("✅ File processed. Ask a question below!")
 
-# Sample questions
+# ========== SAMPLE QUESTIONS ==========
 sample_questions = [
     "What is the summary?",
     "List key points discussed.",
@@ -168,7 +173,7 @@ sample_questions = [
     "What are the challenges mentioned?"
 ]
 
-# Input
+# ========== QUERY INPUT ==========
 col1, col2 = st.columns([1, 1])
 with col1:
     selected_question = st.selectbox("Pick a sample question:", [""] + sample_questions)
@@ -177,12 +182,12 @@ with col2:
 
 query = custom_question if custom_question else selected_question
 
-# Search Button
+# ========== SEARCH BUTTON ==========
 button_cols = st.columns([3, 1, 3])
 with button_cols[1]:
     submit = st.button("🔍 Search", use_container_width=True)
 
-# Validation & Answer
+# ========== HANDLE SEARCH ==========
 if submit:
     if not uploaded_file:
         st.error("⚠️ Please upload a file first.")
@@ -213,10 +218,7 @@ Answer:"""
             except Exception as e:
                 st.error(f"❌ OpenAI API error: {e}")
 
-elif uploaded_file and not openai.api_key:
-    st.warning("⚠️ No OpenAI API key found. Please add it in Streamlit secrets.")
-
-# Footer
+# ========== FOOTER ==========
 st.markdown("""
     <style>
     @keyframes glow {
@@ -251,4 +253,3 @@ st.markdown("""
         Created by <b> Krittika Ghosh</b>
     </div>
 """, unsafe_allow_html=True)
-
