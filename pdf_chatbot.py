@@ -10,10 +10,32 @@ import os
 import docx
 import pandas as pd
 
-# Page config
+# ========== USER LOGIN ==========
+users = {
+    "KRITTIKA GHOSH": "KG@123",
+    "SONALI GHOSH": "SG@123"
+}
+
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if not st.session_state["authenticated"]:
+    st.title("🔐 Login to PageEcho")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        if username in users and users[username] == password:
+            st.session_state["authenticated"] = True
+            st.success("✅ Logged in successfully!")
+            st.experimental_rerun()
+        else:
+            st.error("❌ Invalid username or password.")
+    st.stop()
+
+# ========== PAGE CONFIG ==========
 st.set_page_config(page_title="PageEcho", layout="centered", page_icon="📄")
 
-# Hide default Streamlit UI
+# Hide Streamlit UI
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -22,7 +44,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Custom styling
+# Custom style
 st.markdown("""
     <style>
     body {
@@ -52,36 +74,27 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# App title
+# Title
 st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho ✨</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center; color: #333;'>Where Knowledge Echoes from Every Page 🪄</h4>", unsafe_allow_html=True)
 
-# OpenAI API Key
+# OpenAI Key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Session state setup
-if "file_uploaded" not in st.session_state:
-    st.session_state["file_uploaded"] = False
-    st.session_state["texts"] = []
-    st.session_state["index"] = None
-    st.session_state["embed_model"] = None
-    st.session_state["filename"] = None
-    st.session_state["show_processed_msg"] = False
+# Session variables
+for key in ["file_uploaded", "texts", "index", "embed_model", "filename", "show_processed_msg"]:
+    if key not in st.session_state:
+        st.session_state[key] = False if key == "file_uploaded" else None
 
 # Upload section
 st.markdown("<h3 style='text-align: center; color: #6a0dad;'>🌀 PageEcho Portal: Talk to Your File</h3>", unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Upload a file", type=["pdf", "txt", "docx", "xlsx", "csv"])
 
-# Reset state if file removed
+# Reset on file removal
 if uploaded_file is None:
-    st.session_state["file_uploaded"] = False
-    st.session_state["texts"] = []
-    st.session_state["index"] = None
-    st.session_state["embed_model"] = None
-    st.session_state["filename"] = None
-    st.session_state["show_processed_msg"] = False
+    st.session_state.update({"file_uploaded": False, "texts": [], "index": None, "embed_model": None, "filename": None, "show_processed_msg": False})
 
-# Process uploaded file
+# File processing
 if uploaded_file and openai.api_key:
     if uploaded_file.name != st.session_state["filename"]:
         st.session_state["file_uploaded"] = True
@@ -92,23 +105,19 @@ if uploaded_file and openai.api_key:
                 tmp_file.write(uploaded_file.read())
                 tmp_path = tmp_file.name
 
-            raw_text = ""
             ext = uploaded_file.name.split('.')[-1].lower()
+            raw_text = ""
 
             try:
                 if ext == "pdf":
                     reader = PdfReader(tmp_path)
-                    for page in reader.pages:
-                        content = page.extract_text()
-                        if content:
-                            raw_text += content + "\n"
+                    raw_text = "\n".join([page.extract_text() for page in reader.pages if page.extract_text()])
                 elif ext == "txt":
                     with open(tmp_path, "r", encoding="utf-8") as f:
                         raw_text = f.read()
                 elif ext == "docx":
                     doc = docx.Document(tmp_path)
-                    for para in doc.paragraphs:
-                        raw_text += para.text + "\n"
+                    raw_text = "\n".join([para.text for para in doc.paragraphs])
                 elif ext in ["xlsx", "csv"]:
                     df = pd.read_excel(tmp_path) if ext == "xlsx" else pd.read_csv(tmp_path)
                     raw_text = df.to_string(index=False)
@@ -119,21 +128,22 @@ if uploaded_file and openai.api_key:
                 st.error(f"Error reading file: {e}")
                 st.stop()
 
-            # Process and embed
+            # Embedding
             splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
             texts = splitter.split_text(raw_text)
 
             embed_model = SentenceTransformer('all-MiniLM-L6-v2')
             embeddings = embed_model.encode(texts)
 
-            dimension = embeddings.shape[1]
-            index = faiss.IndexFlatL2(dimension)
+            index = faiss.IndexFlatL2(embeddings.shape[1])
             index.add(np.array(embeddings))
 
-            st.session_state["texts"] = texts
-            st.session_state["index"] = index
-            st.session_state["embed_model"] = embed_model
-            st.session_state["show_processed_msg"] = True
+            st.session_state.update({
+                "texts": texts,
+                "index": index,
+                "embed_model": embed_model,
+                "show_processed_msg": True
+            })
 
 if st.session_state["show_processed_msg"]:
     st.success("✅ File processed. Ask a question below!")
@@ -152,7 +162,7 @@ sample_questions = [
     "What are the challenges mentioned?"
 ]
 
-# User input
+# Input
 col1, col2 = st.columns([1, 1])
 with col1:
     selected_question = st.selectbox("Pick a sample question:", [""] + sample_questions)
@@ -161,34 +171,32 @@ with col2:
 
 query = custom_question if custom_question else selected_question
 
-# Search button row
+# Search Button
 button_cols = st.columns([3, 1, 3])
 with button_cols[1]:
     submit = st.button("🔍 Search", use_container_width=True)
 
-# Validation and result
+# Validation & Answer
 if submit:
     if not uploaded_file:
         st.error("⚠️ Please upload a file first.")
     elif not query.strip():
-        st.error("⚠️ No question given. Please type or select a question.")
+        st.error("⚠️ No question given.")
     else:
         st.info(f"🔍 Searching answer for: **{query}**")
-
         with st.spinner("💬 Generating answer..."):
             query_embedding = st.session_state["embed_model"].encode([query])
             distances, indices = st.session_state["index"].search(query_embedding, k=3)
             context = "\n\n".join([st.session_state["texts"][i] for i in indices[0]])
 
-            prompt = f"""
-You are an assistant that answers questions based only on the context below.
+            prompt = f"""You are an assistant that answers questions based only on the context below.
 
 Context:
 {context}
 
 Question: {query}
-Answer:
-"""
+Answer:"""
+
             try:
                 response = openai.chat.completions.create(
                     model="gpt-3.5-turbo",
@@ -199,33 +207,21 @@ Answer:
             except Exception as e:
                 st.error(f"❌ OpenAI API error: {e}")
 
-# API key not set
 elif uploaded_file and not openai.api_key:
     st.warning("⚠️ No OpenAI API key found. Please add it in Streamlit secrets.")
-#Footer
+
+# Footer
 st.markdown("""
     <style>
     @keyframes glow {
-        0% {
-            box-shadow: 0 0 5px #b266ff, 0 0 10px #b266ff, 0 0 15px #b266ff;
-        }
-        50% {
-            box-shadow: 0 0 10px #8a2be2, 0 0 20px #8a2be2, 0 0 30px #8a2be2;
-        }
-        100% {
-            box-shadow: 0 0 5px #b266ff, 0 0 10px #b266ff, 0 0 15px #b266ff;
-        }
+        0% { box-shadow: 0 0 5px #b266ff, 0 0 10px #b266ff, 0 0 15px #b266ff; }
+        50% { box-shadow: 0 0 10px #8a2be2, 0 0 20px #8a2be2, 0 0 30px #8a2be2; }
+        100% { box-shadow: 0 0 5px #b266ff, 0 0 10px #b266ff, 0 0 15px #b266ff; }
     }
-
     @keyframes bounce {
-        0%, 100% {
-            transform: translateY(0);
-        }
-        50% {
-            transform: translateY(-6px);
-        }
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-6px); }
     }
-
     .footer-left-animated {
         position: fixed;
         bottom: 0;
@@ -242,25 +238,11 @@ st.markdown("""
         align-items: center;
         gap: 8px;
     }
-
-    .emoji {
-        animation: bounce 1.5s infinite;
-        font-size: 18px;
-    }
-
-    @media screen and (max-width: 600px) {
-        .footer-left-animated {
-            font-size: 14px;
-            padding: 8px 16px;
-        }
-        .emoji {
-            font-size: 16px;
-        }
-    }
+    .emoji { animation: bounce 1.5s infinite; font-size: 18px; }
     </style>
-
     <div class="footer-left-animated">
         <span class="emoji">👩‍💻</span>
         Created by <b> Krittika Ghosh</b>
     </div>
 """, unsafe_allow_html=True)
+
