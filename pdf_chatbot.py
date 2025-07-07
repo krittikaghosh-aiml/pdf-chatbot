@@ -18,7 +18,13 @@ users = {
 
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
-
+# ========== LOGOUT ==========
+with st.sidebar:
+    st.markdown("### 🔒 Session")
+    if st.button("🚪 Logout"):
+        st.session_state["authenticated"] = False
+        st.session_state["file_uploaded"] = False
+        st.rerun()
 if not st.session_state["authenticated"]:
     st.title("🔐 Login to PageEcho")
     username = st.text_input("Username")
