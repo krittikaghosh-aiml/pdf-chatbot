@@ -21,17 +21,54 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state["authenticated"]:
     st.set_page_config(page_title="PageEcho", layout="centered", page_icon="📄")
-    st.title("🔐 Login to 🤖 PageEcho ✨")
+
+    # Styled header + caption
+    st.markdown("""
+        <h2 style='text-align: center; color: #6a0dad;'>🔐 Login to 🤖 PageEcho ✨</h2>
+        <p style='text-align: center; color: #333; font-size: 16px;'>Please enter your credentials below.</p>
+    """, unsafe_allow_html=True)
+
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
-    if st.button("Login"):
+
+    # Custom animated login button
+    st.markdown("""
+        <style>
+        .animated-login > button {
+            background-color: #6a0dad;
+            color: white;
+            padding: 10px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+            transition: all 0.3s ease-in-out;
+        }
+        .animated-login > button:hover {
+            background-color: #5c0099;
+            transform: scale(1.05);
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(106, 13, 173, 0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(106, 13, 173, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(106, 13, 173, 0); }
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Button container
+    st.markdown('<div class="animated-login">', unsafe_allow_html=True)
+    if st.button("Login", key="login_btn"):
         if username in users and users[username] == password:
             st.session_state["authenticated"] = True
             st.success("✅ Logged in successfully!")
             st.rerun()
         else:
             st.error("❌ Invalid username or password.")
+    st.markdown("</div>", unsafe_allow_html=True)
+
     st.stop()
+
 
 # ========== PAGE CONFIG ==========
 st.set_page_config(page_title="PageEcho", layout="centered", page_icon="📄")
