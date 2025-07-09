@@ -114,9 +114,6 @@ if not st.session_state.logged_in:
     st.stop()  # stops here if not logged in
 
 # ========= LOGGED IN MAIN APP ==========
-# Header
-st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho ✨</h1>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center; color: #333;'>Where Knowledge Echoes from Every Page 🪄</h4>", unsafe_allow_html=True)
 
 # Logout button in top-center
 logout_center = st.columns([4, 1, 4])
@@ -125,6 +122,11 @@ with logout_center[1]:
         for key in st.session_state.keys():
             st.session_state[key] = False
         st.rerun()
+# Header
+st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho ✨</h1>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #333;'>Where Knowledge Echoes from Every Page 🪄</h4>", unsafe_allow_html=True)
+
+
 
 # OpenAI Key
 openai.api_key = os.getenv("OPENAI_API_KEY")
