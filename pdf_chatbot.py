@@ -22,32 +22,35 @@ if "authenticated" not in st.session_state:
 if not st.session_state["authenticated"]:
     st.set_page_config(page_title="PageEcho", layout="centered", page_icon="📄")
 
-    # Styled header + caption
+    # Header and Caption
     st.markdown("""
         <h2 style='text-align: center; color: #6a0dad;'>🔐 Login to 🤖 PageEcho ✨</h2>
         <p style='text-align: center; color: #333; font-size: 16px;'>Please enter your credentials below.</p>
     """, unsafe_allow_html=True)
 
+    # Username and Password fields
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    # Custom styling for animated login button
+    # Inject animated button with HTML + CSS
     st.markdown("""
         <style>
-        button[kind="primary"] {
-            background-color: #6a0dad !important;
-            color: white !important;
-            padding: 10px 30px !important;
-            border-radius: 8px !important;
-            font-size: 18px !important;
-            font-weight: bold !important;
+        .pulse-button {
+            background-color: #6a0dad;
+            color: white;
+            padding: 10px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
             animation: pulse 2s infinite;
             transition: all 0.3s ease-in-out;
-            border: none;
+            cursor: pointer;
+            display: inline-block;
         }
 
-        button[kind="primary"]:hover {
-            background-color: #5c0099 !important;
+        .pulse-button:hover {
+            background-color: #5c0099;
             transform: scale(1.05);
         }
 
@@ -57,17 +60,23 @@ if not st.session_state["authenticated"]:
             100% { box-shadow: 0 0 0 0 rgba(106, 13, 173, 0); }
         }
         </style>
+
+        <form action="" method="post">
+            <button class="pulse-button" type="submit">Login</button>
+        </form>
     """, unsafe_allow_html=True)
 
-    # Login button
-    if st.button("Login"):
+    # Handle Login on form POST
+    if st.session_state.get("form_submitted", False) or st._is_running_with_streamlit:
         if username in users and users[username] == password:
             st.session_state["authenticated"] = True
             st.success("✅ Logged in successfully!")
             st.rerun()
-        else:
+        elif username and password:
             st.error("❌ Invalid username or password.")
+
     st.stop()
+
 
 
 
