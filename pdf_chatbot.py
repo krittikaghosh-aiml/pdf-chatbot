@@ -178,6 +178,86 @@ if uploaded_file and openai.api_key:
                 else:
                     st.error("❌ Unsupported file format.")
                     st.stop()
-            except Exceptio
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+                st.stop()
+
+            splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+            texts = splitter.split_text(raw_text)
+
+            embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+            embeddings = embed_model.encode(texts)
+
+            index = faiss.IndexFlatL2(embeddings.shape[1])
+            index.add(np.array(embeddings))
+
+            st.session_state.update({
+                "texts": texts,
+                "index": index,
+                "embed_model": embed_model,
+                "show_processed_msg": True
+            })
+
+if st.session_state["show_processed_msg"]:
+    st.success("✅ File processed. Ask a question below!")
+
+# Sample Q&A
+sample_questions = [
+    "What is the summary?",
+    "List key points discussed.",
+    "What is the conclusion?",
+    "What are the main findings?",
+    "What is the purpose of the document?",
+    "Can you explain the methodology?",
+    "What are the recommendations?",
+    "Summarize the introduction section.",
+    "Highlight important dates or events.",
+    "What are the challenges mentioned?"
+]
+
+col1, col2 = st.columns([1, 1])
+with col1:
+    selected_question = st.selectbox("Pick a sample question:", [""] + sample_questions)
+with col2:
+    custom_question = st.text_input("Or type your question here")
+
+query = custom_question if custom_question else selected_question
+
+# Search Button
+button_cols = st.columns([3, 1, 3])
+with button_cols[1]:
+    submit = st.button("🔍 Search", use_container_width=True)
+
+# Q&A Response
+if submit:
+    if not uploaded_file:
+        st.error("⚠️ Please upload a file first.")
+    elif not query.strip():
+        st.error("⚠️ No question given.")
+    else:
+        st.info(f"🔍 Searching answer for: **{query}**")
+        with st.spinner("💬 Generating answer..."):
+            query_embedding = st.session_state["embed_model"].encode([query])
+            distances, indices = st.session_state["index"].search(query_embedding, k=3)
+            context = "\n\n".join([st.session_state["texts"][i] for i in indices[0]])
+
+            prompt = f"""You are an assistant that answers questions based only on the context below.
+
+Context:
+{context}
+
+Question: {query}
+Answer:"""
+
+            try:
+                response = openai.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                answer = response.choices[0].message.content.strip()
+                st.markdown(f"**Answer:** {answer}")
+            except Exception as e:
+                st.error(f"❌ OpenAI API error: {e}")
+
 
 
