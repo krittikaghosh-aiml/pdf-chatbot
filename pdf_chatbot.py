@@ -10,13 +10,28 @@ import os
 import docx
 import pandas as pd
 
-# ========== PAGE CONFIG & STYLING ==========
+# ========= USERS ==========
+USERS = {
+    "KRITTIKA GHOSH": "KG@123",
+    "SONALI GHOSH": "SG@123"
+}
+
+# ========= PAGE CONFIG ==========
 st.set_page_config(page_title="PageEcho", layout="centered", page_icon="📄")
 
-# Styling and animations for buttons and footer
+# ========= SESSION STATE ==========
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+# ========= STYLES ==========
 st.markdown("""
     <style>
     #MainMenu, footer, header {visibility: hidden;}
+
+    body {
+        background-color: #e6ccff;
+        color: #2c3e50;
+    }
 
     div.stButton > button {
         background-color: #6a0dad;
@@ -27,6 +42,7 @@ st.markdown("""
         font-weight: bold;
         animation: pulse 2s infinite;
         transition: all 0.3s ease-in-out;
+        white-space: nowrap;
     }
 
     div.stButton > button:hover {
@@ -45,10 +61,12 @@ st.markdown("""
         50% { box-shadow: 0 0 10px #8a2be2, 0 0 20px #8a2be2, 0 0 30px #8a2be2; }
         100% { box-shadow: 0 0 5px #b266ff, 0 0 10px #b266ff, 0 0 15px #b266ff; }
     }
+
     @keyframes bounce {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-6px); }
     }
+
     .footer-left-animated {
         position: fixed;
         bottom: 0;
@@ -65,43 +83,42 @@ st.markdown("""
         align-items: center;
         gap: 8px;
     }
+
     .emoji { animation: bounce 1.5s infinite; font-size: 18px; }
     </style>
 """, unsafe_allow_html=True)
 
-# ========== USER LOGIN ==========
-USERS = {
-    "KRITTIKA GHOSH": "KG@123",
-    "SONALI GHOSH": "SG@123"
-}
+# ========= FOOTER (ALWAYS VISIBLE) ==========
+st.markdown("""
+    <div class="footer-left-animated">
+        <span class="emoji">👩‍💻</span>
+        Created by <b> Krittika Ghosh</b>
+    </div>
+""", unsafe_allow_html=True)
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
+# ========= LOGIN PAGE ==========
 if not st.session_state.logged_in:
-    st.markdown("""
-        <h2 style='color:#6a0dad;'>🔐 Login to 🤖 PageEcho ✨</h2>
-        <p style='color:#444;font-size:16px;'>Please enter your credentials to continue.</p>
-    """, unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color:#6a0dad;'>🔐 Login to 🤖 PageEcho ✨</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #333; font-size: 16px;'>Please enter your credentials below.</p>", unsafe_allow_html=True)
+
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
-    if st.button("🔐 Login"):
+
+    if st.button("🔓 Login"):
         if username in USERS and USERS[username] == password:
             st.session_state.logged_in = True
-            st.session_state.username = username
             st.success("✅ Login successful! Reloading...")
             st.rerun()
         else:
             st.error("❌ Invalid username or password.")
-    st.markdown("""
-        <div class="footer-left-animated">
-            <span class="emoji">👩‍💻</span>
-            Created by <b> Krittika Ghosh</b>
-        </div>
-    """, unsafe_allow_html=True)
-    st.stop()
+    st.stop()  # stops here if not logged in
 
-# ========== LOGOUT BUTTON ==========
+# ========= LOGGED IN MAIN APP ==========
+# Header
+st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho ✨</h1>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #333;'>Where Knowledge Echoes from Every Page 🪄</h4>", unsafe_allow_html=True)
+
+# Logout button in top-center
 logout_center = st.columns([4, 1, 4])
 with logout_center[1]:
     if st.button("🚪 Logout"):
@@ -109,18 +126,58 @@ with logout_center[1]:
             st.session_state[key] = False
         st.rerun()
 
-# ========== APP HEADER ==========
-st.markdown("<h1 style='text-align: center; color: #6a0dad;'>🤖 PageEcho ✨</h1>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center; color: #333;'>Where Knowledge Echoes from Every Page 🪄</h4>", unsafe_allow_html=True)
+# OpenAI Key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# ========== REMAINING APP CODE GOES HERE ==========
-# File upload, processing, embedding, query interface, etc...
+# App state vars
+for key in ["file_uploaded", "texts", "index", "embed_model", "filename", "show_processed_msg"]:
+    if key not in st.session_state:
+        st.session_state[key] = False if key == "file_uploaded" else None
 
-# ========== GLOBAL FOOTER ==========
-st.markdown("""
-    <div class="footer-left-animated">
-        <span class="emoji">👩‍💻</span>
-        Created by <b> Krittika Ghosh</b>
-    </div>
-""", unsafe_allow_html=True)
+# Upload
+st.markdown("<h3 style='text-align: center; color: #6a0dad;'>🌀 PageEcho Portal: Talk to Your File</h3>", unsafe_allow_html=True)
+uploaded_file = st.file_uploader("Upload a file", type=["pdf", "txt", "docx", "xlsx", "csv"])
+
+if uploaded_file is None:
+    st.session_state.update({
+        "file_uploaded": False,
+        "texts": [],
+        "index": None,
+        "embed_model": None,
+        "filename": None,
+        "show_processed_msg": False
+    })
+
+# Process File
+if uploaded_file and openai.api_key:
+    if uploaded_file.name != st.session_state["filename"]:
+        st.session_state["file_uploaded"] = True
+        st.session_state["filename"] = uploaded_file.name
+
+        with st.spinner("🔄 Processing your file, please wait..."):
+            with tempfile.NamedTemporaryFile(delete=False, suffix="." + uploaded_file.name.split('.')[-1]) as tmp_file:
+                tmp_file.write(uploaded_file.read())
+                tmp_path = tmp_file.name
+
+            ext = uploaded_file.name.split('.')[-1].lower()
+            raw_text = ""
+
+            try:
+                if ext == "pdf":
+                    reader = PdfReader(tmp_path)
+                    raw_text = "\n".join([page.extract_text() for page in reader.pages if page.extract_text()])
+                elif ext == "txt":
+                    with open(tmp_path, "r", encoding="utf-8") as f:
+                        raw_text = f.read()
+                elif ext == "docx":
+                    doc = docx.Document(tmp_path)
+                    raw_text = "\n".join([para.text for para in doc.paragraphs])
+                elif ext in ["xlsx", "csv"]:
+                    df = pd.read_excel(tmp_path) if ext == "xlsx" else pd.read_csv(tmp_path)
+                    raw_text = df.to_string(index=False)
+                else:
+                    st.error("❌ Unsupported file format.")
+                    st.stop()
+            except Exceptio
+
 
