@@ -12,8 +12,9 @@ import pandas as pd
 
 # ========= USERS ==========
 USERS = {
-    "KRITTIKA GHOSH": "KG@123",
-    "SONALI GHOSH": "SG@123"
+    "kg": "kg@123",
+    "sg": "sg@123",
+    "admin": "admin123"
 }
 
 # ========= PAGE CONFIG ==========
